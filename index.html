@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم الشاملة - د / سامي محمد العمر</title>
+    <!-- استدعاء مكتبات Firebase الحديثة (Modular SDK v9) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, update-doc, deleteDoc, setDoc, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+        // إعدادات سحابة الدكتور سامي المطابقة لحسابك
+        const firebaseConfig = {
+          apiKey: "AIzaSyAJKKo_NfmOMA095ulSRDnwQvfHLeIz_s",
+          authDomain: "samy-28452.firebaseapp.com",
+          databaseURL: "https://samy-28452-default-rtdb.firebaseio.com",
+          projectId: "samy-28452",
+          storageBucket: "samy-28452.firebasestorage.app",
+          messagingSenderId: "248617107030",
+          appId: "1:248617107030:web:1a884c43c2461e24c945f7",
+          measurementId: "G-M0BB8TTD91"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allStudentsData = [];
+
+        function fetchStudents() {
+            const approvedTbody = document.querySelector("#studentsTable tbody");
+            const pendingTbody = document.querySelector("#pendingTable tbody");
+            const pendingSection = document.getElementById("pendingSection");
+
+            // 1. مراقبة الطلاب المعتمدين
+            onSnapshot(collection(db, "allowed_students"), (snapshot) => {
+                let approvedCount = snapshot.size;
+                approvedTbody.innerHTML = "";
+                allStudentsData = [];
+                document.getElementById("approvedCount").innerText = `الطلاب المعتمدين: ${approvedCount}`;
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const email = docSnap.id;
+                    allStudentsData.push({ name: data.name || "بدون اسم", email: email });
+
+                    approvedTbody.innerHTML += `
+                        <tr>
+                            <td>${data.name || "بدون اسم"}</td>
+                            <td>${email}</td>
+                            <td>
+                                <button class="btn-edit" onclick="editStudentName('${email}', '${data.name || ""}')">✏️ تعديل</button>
+                                <button class="btn-reject" onclick="deleteAllowed('${email}')">🗑️ حذف</button>
+                            </td>
+                        </tr>`;
+                });
+                searchStudents();
+            });
+
+            // 2. مراقبة الطلبات المعلقة
+            onSnapshot(collection(db, "pending_students"), (snapshot) => {
+                let pendingCount = snapshot.size;
+                pendingTbody.innerHTML = "";
+                document.getElementById("pendingCountBadge").innerText = `الطلبات المعلقة: ${pendingCount}`;
+                pendingSection.style.display = pendingCount > 0 ? "block" : "none";
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const email = docSnap.id;
+                    pendingTbody.innerHTML += `
+                        <tr>
+                            <td>${data.name || "بدون اسم"}</td>
+                            <td>${email}</td>
+                            <td>
+                                <button class="btn-approve" onclick="approveStudent('${email}', '${data.name || ""}')">✅ قبول</button>
+                                <button class="btn-reject" onclick="deletePending('${email}')">❌ رفض</button>
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+
+        // دالة تعديل الاسم وحفظه في السحابة
+        window.editStudentName = async function(email, currentName) {
+            const newName = prompt("أدخل الاسم الجديد للطالب:", currentName);
+            if (newName === null) return;
+            const trimmedName = newName.trim();
+            if (!trimmedName) {
+                alert("لا يمكن أن يكون الاسم فارغاً!");
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "allowed_students", email), {
+                    name: trimmedName
+                });
+                alert("تم تحديث وحفظ الاسم في السحابة بنجاح!");
+            } catch (error) {
+                alert("حدث خطأ أثناء تحديث الاسم.");
+                console.error(error);
+            }
+        };
+
+        // دالة نسخ جميع الطلاب المعتمدين
+        window.copyAllStudents = function() {
+            if (allStudentsData.length === 0) {
+                alert("لا يوجد طلاب لنسخهم!");
+                return;
+            }
+
+            let textToCopy = "";
+            allStudentsData.forEach(s => {
+                textToCopy += `${s.name}\t${s.email}\n`;
+            });
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert("تم نسخ قائمة الطلاب بالكامل بنجاح!");
+            }).catch(err => {
+                alert("حدث خطأ أثناء النسخ.");
+            });
+        };
+
+        window.approveStudent = async function(email, name) {
+            try {
+                await setDoc(doc(db, "allowed_students", email), {
+                    name: name,
+                    added_at: serverTimestamp()
+                });
+                await deleteDoc(doc(db, "pending_students", email));
+            } catch (error) {
+                alert("حدث خطأ أثناء الموافقة.");
+            }
+        };
+
+        window.deletePending = async function(email) {
+            if(confirm(`رفض وحذف ${email} من قائمة الانتظار؟`)) {
+                await deleteDoc(doc(db, "pending_students", email));
+            }
+        };
+
+        window.deleteAllowed = async function(email) {
+            if(confirm(`حذف ${email} من الطلاب المعتمدين؟`)) {
+                await deleteDoc(doc(db, "allowed_students", email));
+            }
+        };
+
+        window.superSmartBulkAdd = async function() {
+            const input = document.getElementById("bulkInput").value.trim();
+            if(!input) return alert("يرجى لصق البيانات");
+
+            const lines = input.split('\n').map(l => l.trim()).filter(l => l !== "");
+            const batch = writeBatch(db);
+            let count = 0;
+
+            for(let i = 0; i < lines.length; i++) {
+                let line1 = lines[i];
+                let line2 = lines[i+1];
+
+                if(!line2) break;
+
+                let name = "", email = "";
+
+                if(!line1.includes('@') && line2.includes('@')) {
+                    name = line1; email = line2.toLowerCase();
+                    i++;
+                } else if(line1.includes('@') && !line2.includes('@')) {
+                    email = line1.toLowerCase(); name = line2;
+                    i++;
+                }
+
+                if(name && email) {
+                    const ref = doc(db, "allowed_students", email);
+                    batch.set(ref, { name: name, added_at: serverTimestamp() });
+                    count++;
+                }
+            }
+
+            if(count > 0) {
+                await batch.commit();
+                alert(`تم رفع واعتماد ${count} طالب مباشرة في سحابة د. سامي بنجاح!`);
+                document.getElementById("bulkInput").value = "";
+            } else {
+                alert("تنسيق غير معروف. تأكد من وجود الاسم والإيميل في سطرين متتاليين.");
+            }
+        };
+
+        window.deleteAllStudents = async function() {
+            if(!confirm("تحذير: هل أنت متأكد من مسح جميع الطلاب المعتمدين لدكتور سامي؟")) return;
+            const snapshot = await getDocs(collection(db, "allowed_students"));
+            const batch = writeBatch(db);
+            snapshot.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            alert("تمت تصفية قائمة المعتمدين بالكامل.");
+        };
+
+        window.searchStudents = function() {
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toUpperCase();
+            let table = document.getElementById("studentsTable");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let tdName = tr[i].getElementsByTagName("td")[0];
+                let tdEmail = tr[i].getElementsByTagName("td")[1];
+                
+                if (tdName || tdEmail) {
+                    let txtValueName = tdName.textContent || tdName.innerText;
+                    let txtValueEmail = tdEmail.textContent || tdEmail.innerText;
+                    
+                    if (txtValueName.toUpperCase().indexOf(filter) > -1 || txtValueEmail.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        };
+
+        // تشغيل دالة الجلب عند تحميل الصفحة
+        fetchStudents();
+    </script>
+
+    <style>
+        :root { --maroon: #1e3a8a; --gold: #0284c7; --bg: #f8fafc; --danger: #dc2626; --success: #10b981; --warning: #d97706; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 20px; }
+        .admin-card { background: white; max-width: 1000px; margin: auto; border-radius: 15px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border-top: 8px solid var(--maroon); }
+        .header { text-align: center; border-bottom: 2px solid var(--gold); margin-bottom: 20px; padding-bottom: 10px; }
+        .header h2 { color: var(--maroon); margin: 0; }
+        .bulk-section { background: #f4f4f4; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px dashed var(--maroon); }
+        textarea { width: 100%; height: 150px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; resize: vertical; box-sizing: border-box; }
+        .controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-upload { background: var(--maroon); }
+        .btn-delete-all { background: var(--danger); }
+        .btn-copy-all { background: var(--warning); }
+        
+        .pending-section { background: #fff8e1; border: 2px solid #ffc107; padding: 15px; border-radius: 10px; margin-bottom: 25px; display: none; }
+        .pending-section h3 { color: #d32f2f; margin-top: 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th { background: var(--maroon); color: white; padding: 12px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
+        
+        .btn-approve { background: var(--success); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-reject { background: var(--danger); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-edit { background: var(--warning); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; margin-left: 5px; }
+        
+        .stats-bar { display: flex; justify-content: space-between; background: #e9ecef; padding: 15px; border-radius: 8px; font-weight: bold; color: var(--maroon); font-size: 1.1rem; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .search-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px; }
+        .search-container h3 { margin: 0; color: var(--maroon); }
+        .search-box { padding: 10px 15px; width: 100%; max-width: 350px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: var(--maroon); box-shadow: 0 0 5px rgba(30,58,138,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <div class="header">
+        <h2>لوحة التحكم الشاملة - د. سامي محمد العمر 🔒</h2>
+        <p>إدارة الطلاب المعتمدين ومراجعة طلبات التسجيل الجديدة (خاص بسحابة د. سامي)</p>
+    </div>
+
+    <!-- قسم الطلبات المعلقة -->
+    <div class="pending-section" id="pendingSection">
+        <h3>🔔 طلبات تسجيل جديدة بانتظار المراجعة</h3>
+        <table id="pendingTable">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>الإجراء</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- قسم الرفع الجماعي -->
+    <div class="bulk-section">
+        <label><strong>لصق القائمة هنا (سيتم اعتمادهم مباشرة للمعتمدين في سحابة د. سامي):</strong></label>
+        <textarea id="bulkInput" placeholder="الصق هنا.. لا يهم إذا بدأ السطر بالاسم أو الإيميل"></textarea>
+        <div class="controls">
+            <button class="btn btn-upload" onclick="superSmartBulkAdd()">بدء المعالجة والرفع 🚀</button>
+            <button class="btn btn-copy-all" onclick="copyAllStudents()">نسخ جميع الطلاب 📋</button>
+            <button class="btn btn-delete-all" onclick="deleteAllStudents()">حذف الكل (المعتمدين) 🗑️</button>
+        </div>
+    </div>
+
+    <!-- شريط الإحصائيات -->
+    <div class="stats-bar">
+        <span id="approvedCount">الطلاب المعتمدين: 0</span>
+        <span id="pendingCountBadge" style="color: #d32f2f;">الطلبات المعلقة: 0</span>
+    </div>
+
+    <!-- رأس جدول المعتمدين مع مربع البحث الذكي -->
+    <div class="search-container">
+        <h3>🎓 قائمة الطلاب المعتمدين (المصرح لهم بالاختبار)</h3>
+        <input type="text" id="searchInput" class="search-box" onkeyup="searchStudents()" placeholder="🔍 ابحث عن اسم الطالب أو إيميله...">
+    </div>
+
+    <table id="studentsTable">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>البريد الإلكتروني</th>
+                <th>الإجراء</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+</body>
+</html>
