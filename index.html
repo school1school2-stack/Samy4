@@ -2,303 +2,193 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم الشاملة - د / سامي محمد العمر</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة د. سامي محمد العمر | الخدمات التعليمية والتقنية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --maroon: #1e3a8a; --gold: #0284c7; --bg: #f8fafc; --danger: #dc2626; --success: #10b981; --warning: #f59e0b; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 20px; }
-        .admin-card { background: white; max-width: 1000px; margin: auto; border-radius: 15px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border-top: 8px solid var(--maroon); }
-        .header { text-align: center; border-bottom: 2px solid var(--gold); margin-bottom: 20px; padding-bottom: 10px; }
-        .header h2 { color: var(--maroon); margin: 0; }
-        .bulk-section { background: #f4f4f4; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px dashed var(--maroon); }
-        textarea { width: 100%; height: 150px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; resize: vertical; box-sizing: border-box; }
-        .controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-upload { background: var(--maroon); }
-        .btn-delete-all { background: var(--danger); }
-        .btn-copy-all { background: var(--gold); }
-        
-        .pending-section { background: #fff8e1; border: 2px solid #ffc107; padding: 15px; border-radius: 10px; margin-bottom: 25px; display: none; }
-        .pending-section h3 { color: #d32f2f; margin-top: 0; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th { background: var(--maroon); color: white; padding: 12px; }
-        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
-        
-        .btn-approve { background: var(--success); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-reject { background: var(--danger); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-edit { background: var(--warning); border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
-        
-        .stats-bar { display: flex; justify-content: space-between; background: #e9ecef; padding: 15px; border-radius: 8px; font-weight: bold; color: var(--maroon); font-size: 1.1rem; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; align-items: center; }
-        .search-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px; }
-        .search-container h3 { margin: 0; color: var(--maroon); }
-        .search-box { padding: 10px 15px; width: 100%; max-width: 350px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; outline: none; transition: 0.3s; }
-        .search-box:focus { border-color: var(--maroon); box-shadow: 0 0 5px rgba(30,58,138,0.2); }
+        :root {
+            --bg-color: #050810;
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --primary-glow: #38bdf8;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: radial-gradient(circle at center, #111827 0%, #050810 100%);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 20px 40px;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        header p {
+            color: var(--primary-glow);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 90%;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+            padding-bottom: 100px;
+        }
+
+        .card {
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 30px;
+            padding: 40px 25px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: 0.5s;
+        }
+
+        .card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--primary-glow);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .icon-box {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border-radius: 24px;
+            color: white;
+            transition: 0.5s;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* تدرجات ألوان فخمة لكل أيقونة */
+        .icon-exams { background: linear-gradient(135deg, #38bdf8, #1e40af); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.3); }
+        .icon-matrix { background: linear-gradient(135deg, #10b981, #064e3b); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); }
+        .icon-students { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
+        .icon-emails { background: linear-gradient(135deg, #8b5cf6, #4c1d95); box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3); }
+
+        .card:hover .icon-box {
+            transform: rotateY(360deg);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 40px;
+            color: #475569;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-<div class="admin-card">
-    <div class="header">
-        <h2>لوحة التحكم الشاملة - د. سامي محمد العمر 🔒</h2>
-        <p>إدارة الطلاب المعتمدين ومراجعة طلبات التسجيل الجديدة (خاص بسحابة د. سامي)</p>
-    </div>
+<header>
+    <h1>منصة د. سامي محمد العمر</h1>
+    <p>بوابتكم للتميز التعليمي والتقني</p>
+</header>
 
-    <!-- قسم الطلبات المعلقة -->
-    <div class="pending-section" id="pendingSection">
-        <h3>🔔 طلبات تسجيل جديدة بانتظار المراجعة</h3>
-        <table id="pendingTable">
-            <thead>
-                <tr>
-                    <th>الاسم</th>
-                    <th>البريد الإلكتروني</th>
-                    <th>الإجراء</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+<div class="container">
 
-    <!-- قسم الرفع الجماعي -->
-    <div class="bulk-section">
-        <label><strong>لصق القائمة هنا (سيتم اعتمادهم مباشرة للمعتمدين في سحابة د. سامي):</strong></label>
-        <textarea id="bulkInput" placeholder="الصق هنا.. لا يهم إذا بدأ السطر بالاسم أو الإيميل"></textarea>
-        <div class="controls">
-            <button class="btn btn-upload" onclick="superSmartBulkAdd()">بدء المعالجة والرفع 🚀</button>
-            <button class="btn btn-delete-all" onclick="deleteAllStudents()">حذف الكل (المعتمدين) 🗑️</button>
+    <!-- موقع متابعة اختبارات الطلاب -->
+    <a href="https://school1school2-stack.github.io/Samy" class="card" target="_blank">
+        <div class="icon-box icon-exams">
+            <i class="fas fa-clipboard-check"></i>
         </div>
-    </div>
+        <h3>متابعة اختبارات الطلاب</h3>
+        <p>لوحة تفاعلية لمتابعة ورصد اختبارات الطلاب بشكل دقيق وفوري.</p>
+    </a>
 
-    <!-- شريط الإحصائيات مع زر النسخ -->
-    <div class="stats-bar">
-        <span id="approvedCount">الطلاب المعتمدين: 0</span>
-        <button class="btn btn-copy-all" onclick="copyAllStudentsList()">📋 نسخ الكل (اسم ثم إيميل)</button>
-        <span id="pendingCountBadge" style="color: #d32f2f;">الطلبات المعلقة: 0</span>
-    </div>
+    <!-- موقع مصفوفة الاسئلة وبناء الاختبارات -->
+    <a href="https://school1school2-stack.github.io/Samy1" class="card" target="_blank">
+        <div class="icon-box icon-matrix">
+            <i class="fas fa-th-large"></i>
+        </div>
+        <h3>مصفوفة الأسئلة وبناء الاختبارات</h3>
+        <p>أداة احترافية لتصميم وبناء الاختبارات بناءً على مصفوفة المواصفات.</p>
+    </a>
 
-    <!-- رأس جدول المعتمدين مع مربع البحث الذكي -->
-    <div class="search-container">
-        <h3>🎓 قائمة الطلاب المعتمدين (المصرح لهم بالاختبار)</h3>
-        <input type="text" id="searchInput" class="search-box" onkeyup="searchStudents()" placeholder="🔍 ابحث عن اسم الطالب أو إيميله...">
-    </div>
+    <!-- موقع متابعة مشاركات الطلاب وتفاعلهم في الفصل والغياب والحضور -->
+    <a href="https://school1school2-stack.github.io/Samy7" class="card" target="_blank">
+        <div class="icon-box icon-students">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <h3>متابعة الطلاب والغياب</h3>
+        <p>متابعة تفاعل ومشاركات الطلاب داخل الفصل الدراسي ورصد الحضور والغياب.</p>
+    </a>
 
-    <table id="studentsTable">
-        <thead>
-            <tr>
-                <th>الاسم</th>
-                <th>البريد الإلكتروني</th>
-                <th>الإجراء</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <!-- موقع اضافة الطلاب وايميلاتهم -->
+    <a href="https://school1school2-stack.github.io/Samy2/" class="card" target="_blank">
+        <div class="icon-box icon-emails">
+            <i class="fas fa-users-cog"></i>
+        </div>
+        <h3>إدارة الطلاب والبريد الإلكتروني</h3>
+        <p>إضافة وتسجيل الطلاب وربطهم بعناوين البريد الإلكتروني الخاصة بهم بسهولة.</p>
+    </a>
+
 </div>
 
-<script>
-    // إعدادات سحابة الدكتور سامي الخاصة بمشروعه المستقل
-    const firebaseConfig = {
-      apiKey: "AIzaSyAJKKo_NfmOMA095ulSRDnwQvfHLeIz_s",
-      authDomain: "samy-28452.firebaseapp.com",
-      databaseURL: "https://samy-28452-default-rtdb.firebaseio.com",
-      projectId: "samy-28452",
-      storageBucket: "samy-28452.firebasestorage.app",
-      messagingSenderId: "248617107030",
-      appId: "1:248617107030:web:1a884c43c2461e24c945f7",
-      measurementId: "G-M0BB8TTD91"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    let cachedStudents = [];
-
-    function fetchStudents() {
-        const approvedTbody = document.querySelector("#studentsTable tbody");
-        const pendingTbody = document.querySelector("#pendingTable tbody");
-        const pendingSection = document.getElementById("pendingSection");
-
-        // 1. مراقبة جدول الطلاب المعتمدين
-        db.collection("allowed_students").orderBy("name").onSnapshot((snapshot) => {
-            let approvedCount = snapshot.size;
-            approvedTbody.innerHTML = "";
-            cachedStudents = [];
-            document.getElementById("approvedCount").innerText = `الطلاب المعتمدين: ${approvedCount}`;
-
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const email = doc.id;
-                cachedStudents.push({ name: data.name, email: email });
-                
-                approvedTbody.innerHTML += `
-                    <tr>
-                        <td>${data.name}</td>
-                        <td>${email}</td>
-                        <td>
-                            <button class="btn-edit" onclick="editStudentName('${email}', '${data.name}')">✏️ تعديل الاسم</button>
-                            <button class="btn-reject" onclick="deleteAllowed('${email}')">🗑️ حذف</button>
-                        </td>
-                    </tr>`;
-            });
-            searchStudents();
-        });
-
-        // 2. مراقبة جدول الطلبات المعلقة
-        db.collection("pending_students").orderBy("name").onSnapshot((snapshot) => {
-            let pendingCount = snapshot.size;
-            pendingTbody.innerHTML = "";
-            document.getElementById("pendingCountBadge").innerText = `الطلبات المعلقة: ${pendingCount}`;
-            pendingSection.style.display = pendingCount > 0 ? "block" : "none";
-
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const email = doc.id;
-                pendingTbody.innerHTML += `
-                    <tr>
-                        <td>${data.name}</td>
-                        <td>${email}</td>
-                        <td>
-                            <button class="btn-approve" onclick="approveStudent('${email}', '${data.name}')">✅ قبول</button>
-                            <button class="btn-reject" onclick="deletePending('${email}')">❌ رفض</button>
-                        </td>
-                    </tr>`;
-            });
-        });
-    }
-
-    async function editStudentName(email, currentName) {
-        const newName = prompt("أدخل الاسم الجديد للطالب:", currentName);
-        if (!newName || !newName.trim() || newName.trim() === currentName) return;
-
-        try {
-            await db.collection("allowed_students").doc(email).update({
-                name: newName.trim()
-            });
-            alert("تم تحديث وحفظ الاسم الجديد في السحابة بنجاح! ✨");
-        } catch (error) {
-            console.error(error);
-            alert("حدث خطأ أثناء تحديث الاسم في السحابة.");
-        }
-    }
-
-    function copyAllStudentsList() {
-        if (cachedStudents.length === 0) {
-            alert("لا توجد بيانات للنسخ.");
-            return;
-        }
-        // ترتيب كل طالب بحيث يكون اسمه في سطر وإيميله في السطر التالي
-        let lines = [];
-        cachedStudents.forEach(st => {
-            lines.push(st.name);
-            lines.push(st.email);
-        });
-
-        const textToCopy = lines.join('\n');
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert(`تم نسخ بيانات ${cachedStudents.length} طالب بنجاح (اسم ثم إيميل) إلى الحافظة! 📋`);
-        }).catch(err => {
-            alert("فشل نسخ البيانات.");
-        });
-    }
-
-    async function approveStudent(email, name) {
-        try {
-            await db.collection("allowed_students").doc(email).set({
-                name: name,
-                added_at: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            await db.collection("pending_students").doc(email).delete();
-        } catch (error) {
-            alert("حدث خطأ أثناء الموافقة.");
-        }
-    }
-
-    async function deletePending(email) {
-        if(confirm(`رفض وحذف ${email} من قائمة الانتظار؟`)) {
-            await db.collection("pending_students").doc(email).delete();
-        }
-    }
-
-    async function deleteAllowed(email) {
-        if(confirm(`حذف ${email} من الطلاب المعتمدين؟`)) {
-            await db.collection("allowed_students").doc(email).delete();
-        }
-    }
-
-    async function superSmartBulkAdd() {
-        const input = document.getElementById("bulkInput").value.trim();
-        if(!input) return alert("يرجى لصق البيانات");
-
-        const lines = input.split('\n').map(l => l.trim()).filter(l => l !== "");
-        const batch = db.batch();
-        let count = 0;
-
-        for(let i = 0; i < lines.length; i++) {
-            let line1 = lines[i];
-            let line2 = lines[i+1];
-
-            if(!line2) break;
-
-            let name = "", email = "";
-
-            if(!line1.includes('@') && line2.includes('@')) {
-                name = line1; email = line2.toLowerCase();
-                i++;
-            } else if(line1.includes('@') && !line2.includes('@')) {
-                email = line1.toLowerCase(); name = line2;
-                i++;
-            }
-
-            if(name && email) {
-                const ref = db.collection("allowed_students").doc(email);
-                batch.set(ref, { name: name, added_at: firebase.firestore.FieldValue.serverTimestamp() });
-                count++;
-            }
-        }
-
-        if(count > 0) {
-            await batch.commit();
-            alert(`تم رفع واعتماد ${count} طالب مباشرة في سحابة د. سامي بنجاح!`);
-            document.getElementById("bulkInput").value = "";
-        } else {
-            alert("تنسيق غير معروف. تأكد من وجود الاسم والإيميل في سطرين متتاليين.");
-        }
-    }
-
-    async function deleteAllStudents() {
-        if(!confirm("تحذير: هل أنت متأكد من مسح جميع الطلاب المعتمدين لدكتور سامي؟")) return;
-        const snapshot = await db.collection("allowed_students").get();
-        const batch = db.batch();
-        snapshot.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-        alert("تمت تصفية قائمة المعتمدين بالكامل.");
-    }
-
-    function searchStudents() {
-        let input = document.getElementById("searchInput");
-        let filter = input.value.toUpperCase();
-        let table = document.getElementById("studentsTable");
-        let tr = table.getElementsByTagName("tr");
-
-        for (let i = 1; i < tr.length; i++) {
-            let tdName = tr[i].getElementsByTagName("td")[0];
-            let tdEmail = tr[i].getElementsByTagName("td")[1];
-            
-            if (tdName || tdEmail) {
-                let txtValueName = tdName.textContent || tdName.innerText;
-                let txtValueEmail = tdEmail.textContent || tdEmail.innerText;
-                
-                if (txtValueName.toUpperCase().indexOf(filter) > -1 || txtValueEmail.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
-            }       
-        }
-    }
-
-    fetchStudents();
-</script>
+<div class="footer">
+    جميع الحقوق محفوظة &copy; 2026 - منصة د. سامي محمد العمر
+</div>
 
 </body>
 </html>
